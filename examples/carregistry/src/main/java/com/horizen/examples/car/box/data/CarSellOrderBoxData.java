@@ -94,11 +94,13 @@ public final class CarSellOrderBoxData extends AbstractNoncedBoxData<SellOrderPr
         int offset = 0;
 
         int size = Ints.fromByteArray(Arrays.copyOfRange(bytes, offset, offset + Ints.BYTES));
+        offset += Ints.BYTES;
+
         SellOrderProposition proposition = SellOrderPropositionSerializer.getSerializer()
-                .parseBytes(Arrays.copyOf(bytes, size));
+                .parseBytes(Arrays.copyOfRange(bytes, offset, offset + size));
         offset += size;
 
-        long value = Longs.fromByteArray(Arrays.copyOf(bytes, Longs.BYTES));
+        long value = Longs.fromByteArray(Arrays.copyOfRange(bytes, offset, offset + Longs.BYTES));
         offset += Longs.BYTES;
 
         size = Ints.fromByteArray(Arrays.copyOfRange(bytes, offset, offset + Ints.BYTES));

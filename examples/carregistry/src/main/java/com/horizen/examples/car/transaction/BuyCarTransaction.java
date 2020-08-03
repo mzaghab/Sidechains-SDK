@@ -31,11 +31,11 @@ public final class BuyCarTransaction extends AbstractRegularTransaction {
     private List<NoncedBox<Proposition>> newBoxes;
 
     public BuyCarTransaction(List<byte[]> inputRegularBoxIds,
-                              List<Signature25519> inputRegularBoxProofs,
-                              List<RegularBoxData> outputRegularBoxesData,
-                              CarBuyOrderInfo carBuyOrderInfo,
-                              long fee,
-                              long timestamp) {
+                             List<Signature25519> inputRegularBoxProofs,
+                             List<RegularBoxData> outputRegularBoxesData,
+                             CarBuyOrderInfo carBuyOrderInfo,
+                             long fee,
+                             long timestamp) {
         super(inputRegularBoxIds, inputRegularBoxProofs, outputRegularBoxesData, fee, timestamp);
         this.carBuyOrderInfo = carBuyOrderInfo;
     }

@@ -67,8 +67,7 @@ public final class SellCarTransaction extends AbstractRegularTransaction {
     public List<NoncedBox<Proposition>> newBoxes() {
         if(newBoxes == null) {
             newBoxes = new ArrayList<>(super.newBoxes());
-
-            long nonce = getNewBoxNonce(carSellOrderInfo.getCarBoxToOpen().proposition(), newBoxes.size());
+            long nonce = getNewBoxNonce(carSellOrderInfo.getSellOrderBoxData().proposition(), newBoxes.size());
             newBoxes.add((NoncedBox) new CarSellOrderBox(carSellOrderInfo.getSellOrderBoxData(), nonce));
 
         }

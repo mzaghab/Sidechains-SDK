@@ -1,8 +1,6 @@
 package com.horizen.examples.car.proof;
 
-import com.google.common.primitives.Booleans;
 import com.google.common.primitives.Bytes;
-import com.google.common.primitives.Ints;
 import com.horizen.examples.car.proposition.SellOrderProposition;
 import com.horizen.proof.AbstractSignature25519;
 import com.horizen.proof.ProofSerializer;
@@ -17,7 +15,7 @@ import static com.horizen.examples.car.proof.CarRegistryProofsIdsEnum.SellOrderS
 public final class SellOrderSpendingProof extends AbstractSignature25519<PrivateKey25519, SellOrderProposition> {
     private boolean isSeller;
 
-    private static int SIGNATURE_LENGTH = Ed25519.signatureLength();
+    public static int SIGNATURE_LENGTH = Ed25519.signatureLength();
 
     public SellOrderSpendingProof(byte[] signatureBytes, boolean isSeller) {
         super(signatureBytes);
@@ -35,10 +33,10 @@ public final class SellOrderSpendingProof extends AbstractSignature25519<Private
     public boolean isValid(SellOrderProposition proposition, byte[] message) {
         if(isSeller) {
             // Car seller wants to discard selling.
-            return Ed25519.verify(proposition.getOwnerPublicKeyBytes(), message, proposition.pubKeyBytes());
+            return Ed25519.verify(signatureBytes, message, proposition.getOwnerPublicKeyBytes());
         } else {
             // Specific buyer wants to buy the car.
-            return Ed25519.verify(proposition.getBuyerPublicKeyBytes(), message, proposition.pubKeyBytes());
+            return Ed25519.verify(signatureBytes, message, proposition.getBuyerPublicKeyBytes());
         }
     }
 

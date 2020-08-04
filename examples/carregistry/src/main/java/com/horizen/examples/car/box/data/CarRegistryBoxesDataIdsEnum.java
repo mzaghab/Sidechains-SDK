@@ -1,5 +1,7 @@
 package com.horizen.examples.car.box.data;
 
+// Declare all custom box data type ids in a single enum to avoid collisions.
+// Used during BoxData serializations.
 public enum CarRegistryBoxesDataIdsEnum {
     CarBoxDataId((byte)1),
     CarSellOrderBoxDataId((byte)2);

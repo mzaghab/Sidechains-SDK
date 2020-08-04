@@ -12,7 +12,13 @@ import java.util.Objects;
 
 import static com.horizen.examples.car.proof.CarRegistryProofsIdsEnum.SellOrderSpendingProofId;
 
+// SellOrderSpendingProof introduced to be able to open the SellOrderProposition, that can be satisfied in 2 cases:
+// 1) If the seller decided to cancel car sell - so should provide the proof of ownership.
+// 2) If the buyer specified in the SellOrder confirmed the operations - purchased the car.
+
+// No specific JSON view is set for SellOrderSpendingProof, the default one form AbstractSignature25519 is taken.
 public final class SellOrderSpendingProof extends AbstractSignature25519<PrivateKey25519, SellOrderProposition> {
+    // To distinguish who opened the CarSellOrderBox: seller or buyer
     private boolean isSeller;
 
     public static int SIGNATURE_LENGTH = Ed25519.signatureLength();
@@ -29,6 +35,7 @@ public final class SellOrderSpendingProof extends AbstractSignature25519<Private
         return isSeller;
     }
 
+    // Depends on isSeller flag value check the signature against seller or buyer public key specified in SellOrderProposition.
     @Override
     public boolean isValid(SellOrderProposition proposition, byte[] message) {
         if(isSeller) {

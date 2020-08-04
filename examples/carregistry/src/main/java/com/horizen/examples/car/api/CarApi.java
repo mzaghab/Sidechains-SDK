@@ -44,7 +44,6 @@ import java.util.*;
 
 import static com.horizen.proof.Signature25519.SIGNATURE_LENGTH;
 
-//simple way to add description for usage in swagger?
 public class CarApi extends ApplicationApiGroup {
 
     private final SidechainTransactionsCompanion sidechainTransactionsCompanion;
@@ -59,11 +58,13 @@ public class CarApi extends ApplicationApiGroup {
         this.sidechainProofsCompanion = sidechainProofsCompanion;
     }
 
+    // Define the base path for API url
     @Override
     public String basePath() {
         return "carApi";
     }
 
+    // Add routes to be processed by API server.
     @Override
     public List<Route> getRoutes() {
         List<Route> routes = new ArrayList<>();
@@ -83,14 +84,17 @@ public class CarApi extends ApplicationApiGroup {
     */
     private ApiResponse createCar(SidechainNodeView view, CreateCarBoxRequest ent) {
         try {
+            // Parse the proposition of Car owner.
             PublicKey25519Proposition carOwnershipProposition = PublicKey25519PropositionSerializer.getSerializer()
                     .parseBytes(BytesUtils.fromHexString(ent.proposition));
 
             CarBoxData carBoxData = new CarBoxData(carOwnershipProposition, ent.vin, ent.year, ent.model, ent.color);
 
+            // Try to collect regular boxes to pay fee
             List<Box<Proposition>> paymentBoxes = new ArrayList<>();
             long amountToPay = ent.fee;
 
+            // Avoid to add boxes that are already spent in some Transaction that is present in node Mempool.
             List<byte[]> boxIdsToExclude = boxesFromMempool(view.getNodeMemoryPool());
             List<Box<Proposition>> regularBoxes = view.getNodeWallet().boxesOfType(RegularBox.class, boxIdsToExclude);
             int index = 0;
@@ -104,11 +108,14 @@ public class CarApi extends ApplicationApiGroup {
                 throw new IllegalStateException("Not enough coins to pay the fee.");
             }
 
+            // Set change if exists
             long change = Math.abs(amountToPay);
             List<RegularBoxData> regularOutputs = new ArrayList<>();
             if (change > 0)
                 regularOutputs.add(new RegularBoxData((PublicKey25519Proposition) paymentBoxes.get(0).proposition(), change));
 
+
+            // Create fake proofs to be able to create transaction to be signed.
             List<byte[]> inputIds = new ArrayList<>();
             for (Box b : paymentBoxes)
                 inputIds.add(b.id());
@@ -124,12 +131,16 @@ public class CarApi extends ApplicationApiGroup {
                     ent.fee,
                     timestamp);
 
+            // Get the Tx message to be signed.
             byte[] messageToSign = unsignedTransaction.messageToSign();
+
+            // Create signatures.
             List<Signature25519> proofs = new ArrayList<>();
             for (Box<Proposition> box : paymentBoxes) {
                 proofs.add((Signature25519) view.getNodeWallet().secretByPublicKey(box.proposition()).get().sign(messageToSign));
             }
 
+            // Create the resulting signed transaction.
             CarDeclarationTransaction signedTransaction = new CarDeclarationTransaction(
                     inputIds,
                     proofs,
@@ -154,6 +165,7 @@ public class CarApi extends ApplicationApiGroup {
     */
     private ApiResponse createCarSellOrder(SidechainNodeView view, CreateCarSellOrderRequest ent) {
         try {
+            // Tre to find CarBox to be opened in the closed boxes list
             CarBox carBox = null;
 
             for (Box b : view.getNodeWallet().boxesOfType(CarBox.class)) {
@@ -164,13 +176,14 @@ public class CarApi extends ApplicationApiGroup {
             if (carBox == null)
                 throw new IllegalArgumentException("CarBox with given box id not found in the Wallet.");
 
+            // Parse the proposition of the Car buyer.
             PublicKey25519Proposition carBuyerProposition = PublicKey25519PropositionSerializer.getSerializer()
                     .parseBytes(BytesUtils.fromHexString(ent.buyerProposition));
 
-            // Get Regular boxes to pay fee
+            // Try to collect regular boxes to pay fee
             List<Box<Proposition>> paymentBoxes = new ArrayList<>();
             long amountToPay = ent.fee;
-
+            // Avoid to add boxes that are already spent in some Transaction that is present in node Mempool.
             List<byte[]> boxIdsToExclude = boxesFromMempool(view.getNodeMemoryPool());
             List<Box<Proposition>> regularBoxes = view.getNodeWallet().boxesOfType(RegularBox.class, boxIdsToExclude);
             int index = 0;
@@ -184,6 +197,7 @@ public class CarApi extends ApplicationApiGroup {
                 throw new IllegalStateException("Not enough coins to pay the fee.");
             }
 
+            // Set change if exists
             long change = Math.abs(amountToPay);
             List<RegularBoxData> regularOutputs = new ArrayList<>();
             if (change > 0)
@@ -193,10 +207,10 @@ public class CarApi extends ApplicationApiGroup {
             for (Box b : paymentBoxes)
                 inputRegularBoxIds.add(b.id());
 
+            // Create fake proofs to be able to create transaction to be signed.
             CarSellOrderInfo fakeSaleOrderInfo = new CarSellOrderInfo(carBox, null, ent.sellPrice, carBuyerProposition);
-
-
             List<Signature25519> fakeRegularInputProofs = Collections.nCopies(inputRegularBoxIds.size(), null);
+
             Long timestamp = System.currentTimeMillis();
 
             SellCarTransaction unsignedTransaction = new SellCarTransaction(
@@ -207,7 +221,10 @@ public class CarApi extends ApplicationApiGroup {
                     ent.fee,
                     timestamp);
 
+            // Get the Tx message to be signed.
             byte[] messageToSign = unsignedTransaction.messageToSign();
+
+            // Create signatures.
             List<Signature25519> regularInputProofs = new ArrayList<>();
 
             for (Box<Proposition> box : paymentBoxes) {
@@ -221,6 +238,7 @@ public class CarApi extends ApplicationApiGroup {
                     carBuyerProposition);
 
 
+            // Create the resulting signed transaction.
             SellCarTransaction transaction = new SellCarTransaction(
                     inputRegularBoxIds,
                     regularInputProofs,
@@ -247,8 +265,10 @@ public class CarApi extends ApplicationApiGroup {
     */
     private ApiResponse acceptCarSellOrder(SidechainNodeView view, SpendCarSellOrderRequest ent) {
         try {
+            // Try to find CarSellOrder to be opened in the closed boxes list
             CarSellOrderBox carSellOrderBox = (CarSellOrderBox)view.getNodeState().getClosedBox(BytesUtils.fromHexString(ent.carSellOrderId)).get();
 
+            // Check that Car sell order buyer public key is controlled by node wallet.
             Optional<Secret> buyerSecretOption = view.getNodeWallet().secretByPublicKey(
                     new PublicKey25519Proposition(carSellOrderBox.proposition().getBuyerPublicKeyBytes()));
             if(!buyerSecretOption.isPresent()) {
@@ -259,6 +279,7 @@ public class CarApi extends ApplicationApiGroup {
             List<Box<Proposition>> paymentBoxes = new ArrayList<>();
             long amountToPay = carSellOrderBox.getPrice() + ent.fee;
 
+            // Avoid to add boxes that are already spent in some Transaction that is present in node Mempool.
             List<byte[]> boxIdsToExclude = boxesFromMempool(view.getNodeMemoryPool());
             List<Box<Proposition>> regularBoxes = view.getNodeWallet().boxesOfType(RegularBox.class, boxIdsToExclude);
             int index = 0;
@@ -272,6 +293,7 @@ public class CarApi extends ApplicationApiGroup {
                 throw new IllegalStateException("Not enough coins to pay the fee.");
             }
 
+            // Set change if exists
             long change = Math.abs(amountToPay);
             List<RegularBoxData> regularOutputs = new ArrayList<>();
             if (change > 0)
@@ -281,6 +303,8 @@ public class CarApi extends ApplicationApiGroup {
             for (Box b : paymentBoxes)
                 inputRegularBoxIds.add(b.id());
 
+            // Create fake proofs to be able to create transaction to be signed.
+            // Specify that sell order is not opened by the seller, but opened by the buyer.
             boolean isSeller = false;
             SellOrderSpendingProof fakeSellProof = new SellOrderSpendingProof(new byte[SellOrderSpendingProof.SIGNATURE_LENGTH], isSeller);
             CarBuyOrderInfo fakeBuyOrderInfo = new CarBuyOrderInfo(carSellOrderBox, fakeSellProof);
@@ -296,18 +320,22 @@ public class CarApi extends ApplicationApiGroup {
                     ent.fee,
                     timestamp);
 
+            // Get the Tx message to be signed.
             byte[] messageToSign = unsignedTransaction.messageToSign();
-            List<Signature25519> regularInputProofs = new ArrayList<>();
 
+            // Create regular signatures.
+            List<Signature25519> regularInputProofs = new ArrayList<>();
             for (Box<Proposition> box : paymentBoxes) {
                 regularInputProofs.add((Signature25519) view.getNodeWallet().secretByPublicKey(box.proposition()).get().sign(messageToSign));
             }
 
+            // Create sell order spending proof for buyer
             SellOrderSpendingProof buyerProof = new SellOrderSpendingProof(
                     buyerSecretOption.get().sign(messageToSign).bytes(),
                     isSeller
             );
 
+            // Create the resulting signed transaction.
             CarBuyOrderInfo buyOrderInfo = new CarBuyOrderInfo(carSellOrderBox, buyerProof);
 
             BuyCarTransaction transaction = new BuyCarTransaction(
@@ -333,12 +361,20 @@ public class CarApi extends ApplicationApiGroup {
     */
     private ApiResponse cancelCarSellOrder(SidechainNodeView view, SpendCarSellOrderRequest ent) {
         try {
-            Optional<Box > carSellOrderBoxOption = view.getNodeState().getClosedBox(BytesUtils.fromHexString(ent.carSellOrderId));
+            // Try to find CarSellOrder to be opened in the closed boxes list
+            Optional<Box> carSellOrderBoxOption = view.getNodeState().getClosedBox(BytesUtils.fromHexString(ent.carSellOrderId));
 
             if (!carSellOrderBoxOption.isPresent())
                 throw new IllegalArgumentException("CarSellOrderBox with given box id not found in the State.");
 
             CarSellOrderBox carSellOrderBox = (CarSellOrderBox)carSellOrderBoxOption.get();
+
+            // Check that Car sell order owner public key is controlled by node wallet.
+            Optional<Secret> ownerSecretOption = view.getNodeWallet().secretByPublicKey(
+                    new PublicKey25519Proposition(carSellOrderBox.proposition().getOwnerPublicKeyBytes()));
+            if(!ownerSecretOption.isPresent()) {
+                return new CarResponseError("0100", "Can't buy the car, because the owner proposition is not owned by the Node.", Option.empty());
+            }
 
             // Get Regular boxes to pay the fee
             List<Box<Proposition>> paymentBoxes = new ArrayList<>();
@@ -357,6 +393,7 @@ public class CarApi extends ApplicationApiGroup {
                 throw new IllegalStateException("Not enough coins to pay the fee.");
             }
 
+            // Set change if exists
             long change = Math.abs(amountToPay);
             List<RegularBoxData> regularOutputs = new ArrayList<>();
             if (change > 0)
@@ -366,6 +403,8 @@ public class CarApi extends ApplicationApiGroup {
             for (Box b : paymentBoxes)
                 inputRegularBoxIds.add(b.id());
 
+            // Create fake proofs to be able to create transaction to be signed.
+            // Specify that sell order is opened by the seller.
             boolean isSeller = true;
             SellOrderSpendingProof fakeOwnerProof = new SellOrderSpendingProof(new byte[SellOrderSpendingProof.SIGNATURE_LENGTH], isSeller);
             CarBuyOrderInfo fakeBuyOrderInfo = new CarBuyOrderInfo(carSellOrderBox, fakeOwnerProof);
@@ -381,21 +420,22 @@ public class CarApi extends ApplicationApiGroup {
                     ent.fee,
                     timestamp);
 
+            // Get the Tx message to be signed.
             byte[] messageToSign = unsignedTransaction.messageToSign();
-            List<Signature25519> regularInputProofs = new ArrayList<>();
 
+            // Create regular signatures.
+            List<Signature25519> regularInputProofs = new ArrayList<>();
             for (Box<Proposition> box : paymentBoxes) {
                 regularInputProofs.add((Signature25519) view.getNodeWallet().secretByPublicKey(box.proposition()).get().sign(messageToSign));
             }
 
-            Secret ownerSecret = view.getNodeWallet().secretByPublicKey(
-                    new PublicKey25519Proposition(carSellOrderBox.proposition().getOwnerPublicKeyBytes())).get();
-
+            // Create sell order spending proof for owner
             SellOrderSpendingProof ownerProof = new SellOrderSpendingProof(
-                    ownerSecret.sign(messageToSign).bytes(),
+                    ownerSecretOption.get().sign(messageToSign).bytes(),
                     isSeller
             );
 
+            // Create the resulting signed transaction.
             CarBuyOrderInfo buyOrderInfo = new CarBuyOrderInfo(carSellOrderBox, ownerProof);
 
             BuyCarTransaction transaction = new BuyCarTransaction(
@@ -412,6 +452,7 @@ public class CarApi extends ApplicationApiGroup {
         }
     }
 
+    // The CarApi requests success result output structure.
     @JsonView(Views.Default.class)
     class TxResponse implements SuccessResponse {
         public String transactionBytes;
@@ -421,6 +462,7 @@ public class CarApi extends ApplicationApiGroup {
         }
     }
 
+    // The CarApi requests error result output structure.
     static class CarResponseError implements ErrorResponse {
         private final String code;
         private final String description;
@@ -448,6 +490,7 @@ public class CarApi extends ApplicationApiGroup {
         }
     }
 
+    // Utility functions to get from the current mempool the list of all boxes to be opened.
     private List<byte[]> boxesFromMempool(NodeMemoryPool mempool) {
         List<byte[]> boxesFromMempool = new ArrayList<>();
         for(BoxTransaction tx : mempool.getTransactions()) {

@@ -1,5 +1,6 @@
 package com.horizen.examples.car.api.request;
 
+// '.../carApi/createCar' HTTP Post request body representing class.
 public class CreateCarBoxRequest {
     public String vin;
     public int year;
@@ -7,6 +8,9 @@ public class CreateCarBoxRequest {
     public String color;
     public String proposition; // hex representation of public key proposition
     public long fee;
+
+
+    // Setters to let Akka jackson JSON library to automatically deserialize the request body.
 
     public void setVin(String vin) {
         this.vin = vin;

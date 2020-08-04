@@ -21,16 +21,19 @@ public class CarRegistryApplicationState implements ApplicationState {
 
     @Override
     public boolean validate(SidechainStateReader stateReader, BoxTransaction<Proposition, Box<Proposition>> transaction) {
+        // TODO: here we expect to go though all CarDeclarationTransactions and verify that each CarBox reflects to unique Car.
         return true;
     }
 
     @Override
     public Try<ApplicationState> onApplyChanges(SidechainStateReader stateReader, byte[] version, List<Box<Proposition>> newBoxes, List<byte[]> boxIdsToRemove) {
+        // TODO: here we expect to update Car info database. The data from it will be used during validation.
         return new Success<>(this);
     }
 
     @Override
     public Try<ApplicationState> onRollback(byte[] version) {
+        // TODO: rollback car info database to certain point.
         return new Success<>(this);
     }
 }

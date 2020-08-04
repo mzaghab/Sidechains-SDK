@@ -21,7 +21,12 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.horizen.examples.car.transaction.CarRegistryTransactionsIdsEnum.CarDeclarationTransactionId;
-// TODO: add mempool incompatibility checker.
+
+// CarDeclarationTransaction is nested from AbstractRegularTransaction so support regular coins transmission as well.
+// Moreover it was designed to declare new Cars in the sidechain network.
+// As outputs it contains possible RegularBoxes(to pay fee and change) and new CarBox entry.
+// No specific unlockers to parent class logic, but has specific new box.
+// TODO: add specific mempool incompatibility checker to deprecate keeping in the Mempool txs that declare the same Car.
 public final class CarDeclarationTransaction extends AbstractRegularTransaction {
 
     private CarBoxData outputCarBoxData;
@@ -37,12 +42,15 @@ public final class CarDeclarationTransaction extends AbstractRegularTransaction 
         super(inputRegularBoxIds, inputRegularBoxProofs, outputRegularBoxesData, fee, timestamp);
         this.outputCarBoxData = outputCarBoxData;
     }
-    
+
+    // Specify the unique custom transaction id.
     @Override
     public byte transactionTypeId() {
         return CarDeclarationTransactionId.id();
     }
 
+    // Override newBoxes to contains regularBoxes from the parent class appended with CarBox entry.
+    // The nonce calculation algorithm for CarBox is the same as in parent class.
     @Override
     public synchronized List<NoncedBox<Proposition>> newBoxes() {
         if(newBoxes == null) {
@@ -53,6 +61,7 @@ public final class CarDeclarationTransaction extends AbstractRegularTransaction 
         return Collections.unmodifiableList(newBoxes);
     }
 
+    // Define object serialization, that should serialize both parent class entries and CarBoxData as well
     @Override
     public byte[] bytes() {
         ByteArrayOutputStream inputsIdsStream = new ByteArrayOutputStream();
@@ -81,6 +90,7 @@ public final class CarDeclarationTransaction extends AbstractRegularTransaction 
         );
     }
 
+    // Define object deserialization similar to 'toBytes()' representation.
     public static CarDeclarationTransaction parseBytes(byte[] bytes) {
         int offset = 0;
 
@@ -121,6 +131,7 @@ public final class CarDeclarationTransaction extends AbstractRegularTransaction 
         return new CarDeclarationTransaction(inputRegularBoxIds, inputRegularBoxProofs, outputRegularBoxesData, outputCarBoxData, fee, timestamp);
     }
 
+    // Set specific Serializer for CarDeclarationTransaction class.
     @Override
     public TransactionSerializer serializer() {
         return CarDeclarationTransactionSerializer.getSerializer();

@@ -18,11 +18,13 @@ import static com.horizen.examples.car.box.data.CarRegistryBoxesDataIdsEnum.CarB
 @JsonView(Views.Default.class)
 public final class CarBoxData extends AbstractNoncedBoxData<PublicKey25519Proposition, CarBox, CarBoxData> {
 
-    private final String vin;
-    private final int year;
-    private final String model;
-    private final String color;
+    // In CarRegistry example we defined 4 main car attributes:
+    private final String vin;   // Vehicle Identification Number
+    private final int year;     // Car manufacture year
+    private final String model; // Car Model
+    private final String color; // Car color
 
+    // Additional check on VIN length can be done as well, but not present as a part of current example.
     public CarBoxData(PublicKey25519Proposition proposition, String vin,
                       int year, String model, String color) {
         super(proposition, 1);

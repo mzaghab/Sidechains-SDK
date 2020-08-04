@@ -62,24 +62,32 @@ public class CarRegistryAppModule
 
 
         // Define custom serializers:
+
+        // Specify how to serialize custom Boxes.
+        // The hash map expect to have unique Box type ids as the keys.
         HashMap<Byte, BoxSerializer<Box<Proposition>>> customBoxSerializers = new HashMap<>();
         customBoxSerializers.put(CarRegistryBoxesIdsEnum.CarBoxId.id(), (BoxSerializer) CarBoxSerializer.getSerializer());
         customBoxSerializers.put(CarRegistryBoxesIdsEnum.CarSellOrderBoxId.id(), (BoxSerializer) CarSellOrderBoxSerializer.getSerializer());
 
+        // Specify how to serialize custom BoxData.
         HashMap<Byte, NoncedBoxDataSerializer<NoncedBoxData<Proposition, NoncedBox<Proposition>>>> customBoxDataSerializers = new HashMap<>();
         customBoxDataSerializers.put(CarRegistryBoxesDataIdsEnum.CarBoxDataId.id(), (NoncedBoxDataSerializer) CarBoxDataSerializer.getSerializer());
         customBoxDataSerializers.put(CarRegistryBoxesDataIdsEnum.CarSellOrderBoxDataId.id(), (NoncedBoxDataSerializer) CarSellOrderBoxDataSerializer.getSerializer());
 
+        // No custom secrets for CarRegistry app.
         HashMap<Byte, SecretSerializer<Secret>> customSecretSerializers = new HashMap<>();
 
+        // Specify how to serialize custom Proofs.
         HashMap<Byte, ProofSerializer<Proof<Proposition>>> customProofSerializers = new HashMap<>();
         customProofSerializers.put(CarRegistryProofsIdsEnum.SellOrderSpendingProofId.id(), (ProofSerializer) SellOrderSpendingProofSerializer.getSerializer());
 
+        // Specify how to serialize custom Transaction.
         HashMap<Byte, TransactionSerializer<BoxTransaction<Proposition, Box<Proposition>>>> customTransactionSerializers = new HashMap<>();
         customTransactionSerializers.put(CarRegistryTransactionsIdsEnum.CarDeclarationTransactionId.id(), (TransactionSerializer) CarDeclarationTransactionSerializer.getSerializer());
         customTransactionSerializers.put(CarRegistryTransactionsIdsEnum.SellCarTransactionId.id(), (TransactionSerializer) SellCarTransactionSerializer.getSerializer());
         customTransactionSerializers.put(CarRegistryTransactionsIdsEnum.BuyCarTransactionId.id(), (TransactionSerializer) BuyCarTransactionSerializer.getSerializer());
 
+        // Create companions that will allow to serialize and deserialize any kind of core and custom types specified.
         SidechainBoxesDataCompanion sidechainBoxesDataCompanion = new SidechainBoxesDataCompanion(customBoxDataSerializers);
         SidechainProofsCompanion sidechainProofsCompanion = new SidechainProofsCompanion(customProofSerializers);
         SidechainTransactionsCompanion transactionsCompanion = new SidechainTransactionsCompanion(
@@ -103,6 +111,7 @@ public class CarRegistryAppModule
 
 
         // Add car registry specific API endpoints:
+        // CarApi endpoints processing will be added to the API server.
         List<ApplicationApiGroup> customApiGroups = new ArrayList<>();
         customApiGroups.add(new CarApi(transactionsCompanion, sidechainBoxesDataCompanion, sidechainProofsCompanion));
 
@@ -112,6 +121,7 @@ public class CarRegistryAppModule
 
 
         // Inject custom objects:
+        // Names are equal to the ones specified in SidechainApp class constructor.
         bind(SidechainSettings.class)
                 .annotatedWith(Names.named("SidechainSettings"))
                 .toInstance(sidechainSettings);

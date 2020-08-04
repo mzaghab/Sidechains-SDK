@@ -15,12 +15,13 @@ import com.horizen.utils.BytesUtils;
 
 import java.util.Arrays;
 
+// CarBuyOrderInfo contains the minimal set of data needed to construct SellCarTransaction specific inputs an outputs.
 public final class CarSellOrderInfo {
 
-    private CarBox carBoxToOpen;
-    private Signature25519 proof;
-    private long price;
-    private PublicKey25519Proposition buyerProposition;
+    private CarBox carBoxToOpen;    // Car box to be spent in SellCarTransaction
+    private Signature25519 proof;   // Proof to unlock the box above
+    private long price;             // The Car price specified by the owner
+    private PublicKey25519Proposition buyerProposition; // The potential buyer of the car.
 
     public CarSellOrderInfo(CarBox carBoxToOpen, Signature25519 proof, long price, PublicKey25519Proposition buyerProposition) {
         this.carBoxToOpen = carBoxToOpen;
@@ -29,14 +30,17 @@ public final class CarSellOrderInfo {
         this.buyerProposition = buyerProposition;
     }
 
+    // Input box data for unlocker construction.
     public CarBox getCarBoxToOpen() {
         return carBoxToOpen;
     }
-
+    // Input proof data for unlocker construction.
     public Signature25519 getCarBoxSpendingProof() {
         return proof;
     }
 
+    // Recreates output CarSellOrderBoxData with the same Car attributes specified in CarBox
+    // and price/buyer specified in curent CarSellOrderInfo instance.
     public CarSellOrderBoxData getSellOrderBoxData() {
         return new CarSellOrderBoxData(
                 new SellOrderProposition(carBoxToOpen.proposition().pubKeyBytes(), buyerProposition.pubKeyBytes()),
@@ -48,6 +52,7 @@ public final class CarSellOrderInfo {
         );
     }
 
+    // CarSellOrderInfo minimal bytes representation.
     public byte[] bytes() {
         byte[] carBoxToOpenBytes = CarBoxSerializer.getSerializer().toBytes(carBoxToOpen);
         byte[] proofBytes = Signature25519Serializer.getSerializer().toBytes(proof);
@@ -65,6 +70,7 @@ public final class CarSellOrderInfo {
         );
     }
 
+    // Define object deserialization similar to 'toBytes()' representation.
     public static CarSellOrderInfo parseBytes(byte[] bytes) {
         int offset = 0;
 

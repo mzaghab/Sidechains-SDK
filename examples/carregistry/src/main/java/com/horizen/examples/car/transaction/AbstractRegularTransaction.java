@@ -1,8 +1,5 @@
 package com.horizen.examples.car.transaction;
 
-import com.google.common.primitives.Bytes;
-import com.google.common.primitives.Ints;
-import com.google.common.primitives.Longs;
 import com.horizen.box.*;
 import com.horizen.box.data.*;
 import com.horizen.proof.Proof;
@@ -12,11 +9,13 @@ import com.horizen.proposition.Proposition;
 import com.horizen.transaction.SidechainTransaction;
 import com.horizen.utils.ListSerializer;
 
-import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+// AbstractRegularTransaction is an abstract class that was designed to work with RegularBoxes only.
+// This class can spent RegularBoxes and create new RegularBoxes.
+// It also support fee payment logic.
 public abstract class AbstractRegularTransaction extends SidechainTransaction<Proposition, NoncedBox<Proposition>> {
 
     protected List<byte[]> inputRegularBoxIds;
@@ -33,12 +32,12 @@ public abstract class AbstractRegularTransaction extends SidechainTransaction<Pr
 
     private List<NoncedBox<Proposition>> newBoxes;
 
-    public AbstractRegularTransaction(List<byte[]> inputRegularBoxIds,
-
-                                      List<Signature25519> inputRegularBoxProofs,
-                                      List<RegularBoxData> outputRegularBoxesData,
-                                      long fee,
-                                      long timestamp) {
+    public AbstractRegularTransaction(List<byte[]> inputRegularBoxIds,              // regular box ids to spent
+                                      List<Signature25519> inputRegularBoxProofs,   // proofs to spent regular boxes
+                                      List<RegularBoxData> outputRegularBoxesData,  // destinations where to send regular coins
+                                      long fee,                                     // fee to be paid
+                                      long timestamp) {                             // creation time in milliseconds from epoch
+        // Number of input ids should be equal to number of proofs, otherwise transaction is for sure invalid.
         if(inputRegularBoxIds.size() != inputRegularBoxProofs.size())
             throw new IllegalArgumentException("Regular box inputs list size is different to proving signatures list size!");
 
@@ -50,9 +49,13 @@ public abstract class AbstractRegularTransaction extends SidechainTransaction<Pr
     }
 
 
+    // Box ids to open and proofs is expected to be aggregated together and represented as Unlockers.
+    // Important: all boxes which must be opened as a part of the Transaction MUST be represented as Unlocker.
     @Override
     public List<BoxUnlocker<Proposition>> unlockers() {
+        // All the transactions expected to be immutable, so we keep this list cached to avoid redundant calculations.
         List<BoxUnlocker<Proposition>> unlockers = new ArrayList<>();
+        // Fill the list with the regular inputs.
         for (int i = 0; i < inputRegularBoxIds.size() && i < inputRegularBoxProofs.size(); i++) {
             int finalI = i;
             BoxUnlocker<Proposition> unlocker = new BoxUnlocker<Proposition>() {
@@ -72,6 +75,10 @@ public abstract class AbstractRegularTransaction extends SidechainTransaction<Pr
         return unlockers;
     }
 
+    // Specify the output boxes.
+    // Nonce calculation algorithm is deterministic. So it's forbidden to set nonce in different way.
+    // The check for proper nonce is defined in SidechainTransaction.semanticValidity method.
+    // Such an algorithm is needed to disallow box ids manipulation and different vulnerabilities related to this.
     @Override
     public List<NoncedBox<Proposition>> newBoxes() {
         if(newBoxes == null) {

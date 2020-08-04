@@ -11,13 +11,21 @@ import com.horizen.utils.Ed25519;
 
 import java.util.Arrays;
 
+// SellOrderProposition introduced to lock SellOrderBoxes.
+// It consists of 2 public keys: owner and buyer.
+// So it can be opened in case if owner canceled car sell or buyer purchased the car.
+// Unlocking procedure is defined in SellOrderSpendingProof and BuyCarTransaction.
+
+// Declare default JSON view for SellOrderProposition object.
 @JsonView(Views.Default.class)
 public final class SellOrderProposition implements ProofOfKnowledgeProposition<PrivateKey25519> {
     private static final int KEY_LENGTH = Ed25519.keyLength();
 
+    // Specify json attribute name for the ownerPublicKeyBytes field.
     @JsonProperty("ownerPublicKey")
     private byte[] ownerPublicKeyBytes;
 
+    // Specify json attribute name for the buyerPublicKeyBytes field.
     @JsonProperty("buyerPublicKey")
     private byte[] buyerPublicKeyBytes;
 

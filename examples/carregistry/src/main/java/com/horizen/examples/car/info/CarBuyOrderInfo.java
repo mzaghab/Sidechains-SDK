@@ -13,10 +13,10 @@ import com.horizen.utils.BytesUtils;
 
 import java.util.Arrays;
 
+// CarBuyOrderInfo contains the minimal set of data needed to construct BuyCarTransaction specific inputs an outputs.
 public final class CarBuyOrderInfo {
-
-    private CarSellOrderBox carSellOrderBoxToOpen;
-    private SellOrderSpendingProof proof;
+    private CarSellOrderBox carSellOrderBoxToOpen;  // Sell order box to be spent in BuyCarTransaction
+    private SellOrderSpendingProof proof;           // Proof to unlock the box above
 
     public CarBuyOrderInfo(CarSellOrderBox carSellOrderBoxToOpen, SellOrderSpendingProof proof) {
         this.carSellOrderBoxToOpen = carSellOrderBoxToOpen;
@@ -31,7 +31,10 @@ public final class CarBuyOrderInfo {
         return proof;
     }
 
-    // Set new ownership to the Car
+    // Recreates output CarBoxData with the same attributes specified in CarSellOrder.
+    // Specifies the new owner depends on proof provided:
+    // 1) if the proof is from the seller -> the owner remain the same;
+    // 2) if the proof is from the buyer -> it will become the new owner.
     public CarBoxData getNewOwnerCarBoxData() {
         PublicKey25519Proposition proposition;
         if(proof.isSeller()) {
@@ -63,6 +66,7 @@ public final class CarBuyOrderInfo {
     }
 
 
+    // CarBuyOrderInfo minimal bytes representation.
     public byte[] bytes() {
         byte[] carSellOrderBoxToOpenBytes = CarSellOrderBoxSerializer.getSerializer().toBytes(carSellOrderBoxToOpen);
         byte[] proofBytes = SellOrderSpendingProofSerializer.getSerializer().toBytes(proof);
@@ -75,6 +79,7 @@ public final class CarBuyOrderInfo {
         );
     }
 
+    // Define object deserialization similar to 'toBytes()' representation.
     public static CarBuyOrderInfo parseBytes(byte[] bytes) {
         int offset = 0;
 

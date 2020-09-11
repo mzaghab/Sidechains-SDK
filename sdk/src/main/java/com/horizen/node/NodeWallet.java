@@ -2,7 +2,6 @@ package com.horizen.node;
 
 import com.horizen.box.Box;
 import com.horizen.proposition.Proposition;
-import com.horizen.proposition.ProofOfKnowledgeProposition;
 import com.horizen.secret.Secret;
 
 import java.util.*;

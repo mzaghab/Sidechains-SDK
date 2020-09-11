@@ -5,8 +5,9 @@ import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
-import com.horizen.box.*;
-import com.horizen.box.data.*;
+import com.horizen.box.BoxUnlocker;
+import com.horizen.box.NoncedBox;
+import com.horizen.box.data.NoncedBoxData;
 import com.horizen.companion.SidechainBoxesDataCompanion;
 import com.horizen.companion.SidechainProofsCompanion;
 import com.horizen.proof.Proof;
@@ -15,10 +16,10 @@ import com.horizen.utils.BytesUtils;
 import com.horizen.utils.ListSerializer;
 import scorex.core.NodeViewModifier$;
 
-import static com.horizen.transaction.CoreTransactionsIdsEnum.SidechainCoreTransactionId;
-
 import java.io.ByteArrayOutputStream;
 import java.util.*;
+
+import static com.horizen.transaction.CoreTransactionsIdsEnum.SidechainCoreTransactionId;
 
 
 public class SidechainCoreTransaction
@@ -37,6 +38,15 @@ public class SidechainCoreTransaction
     private List<NoncedBox<Proposition>> newBoxes;
     private List<BoxUnlocker<Proposition>> unlockers;
 
+
+    SidechainCoreTransaction(@Assisted("inputIds") List<byte[]> inputsIds,
+                             @Assisted("outputsData") List<NoncedBoxData<Proposition, NoncedBox<Proposition>>> outputsData,
+                             @Assisted("proofs") List<Proof<Proposition>> proofs,
+                             @Assisted("fee") long fee,
+                             @Assisted("timestamp") long timestamp,
+                             @Assisted("additionalData") Object additionalData,
+                             SidechainBoxesDataCompanion boxesDataCompanion,
+                             SidechainProofsCompanion proofsCompanion) {}
 
     @Inject
     SidechainCoreTransaction(@Assisted("inputIds") List<byte[]> inputsIds,
